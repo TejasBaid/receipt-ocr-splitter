@@ -2,7 +2,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
-import { ReactNode } from "react";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
