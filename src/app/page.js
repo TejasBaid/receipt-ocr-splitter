@@ -3,11 +3,9 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Camera, UserPlus, X, Calculator, RotateCcw, AlertTriangle, Info, Check, UploadCloud, Sun, Moon, ArrowRight, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 
-// --- Helper Function ---
 let nextIdCounter = 0;
 const generateId = () => nextIdCounter++;
 
-// --- Theme Hook ---
 function useTheme() {
   const [theme, setTheme] = useState('light');
 
@@ -33,9 +31,8 @@ function useTheme() {
   return { theme, toggleTheme };
 }
 
-// --- Cloudinary Upload Implementation (Unsigned) ---
 const uploadFileToCloudinaryUnsigned = async (file) => {
-  const CLOUDINARY_CLOUD_NAME = 'dqfvbhs8u'; // Your Cloudinary cloud name
+  const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; // Your Cloudinary cloud name
   const CLOUDINARY_UPLOAD_PRESET = 'receipt_upload_preset'; // Your UNSIGNED preset name
   const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
   console.log(`Attempting UNSIGNED upload of ${file.name} to Cloudinary...`);
@@ -54,17 +51,13 @@ const uploadFileToCloudinaryUnsigned = async (file) => {
   }
 };
 
-// --- Components ---
 
-// --- MessageBox ---
 const MessageBox = ({ message, isVisible, type = 'info' }) => {
-  // (Same as previous version)
   if (!isVisible || !message) return null;
   const bgColor = type === 'error' ? 'bg-red-600' : type === 'warning' ? 'bg-yellow-500 text-yellow-900' : 'bg-indigo-700';
   return ( <div className={`fixed top-5 left-1/2 transform -translate-x-1/2 px-5 py-3 rounded-lg shadow-md text-white text-sm font-medium z-[100] transition-all duration-300 ease-in-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'} ${bgColor}`} role="alert">{message}</div> );
 };
 
-// --- ThemeToggle ---
 const ThemeToggle = ({ theme, toggleTheme }) => {
   return (
       <button
@@ -77,7 +70,6 @@ const ThemeToggle = ({ theme, toggleTheme }) => {
   );
 };
 
-// --- Layout ---
 const Layout = ({ children }) => {
   const { theme, toggleTheme } = useTheme();
   return (
@@ -90,7 +82,6 @@ const Layout = ({ children }) => {
   );
 };
 
-// --- Step Container ---
 const StepContainer = ({ title, children }) => (
     <div className="relative bg-white/60 dark:bg-black/40 backdrop-filter backdrop-blur-lg border border-white/20 dark:border-white/10 p-6 sm:p-8 md:p-10 rounded-2xl shadow-xl mb-8">
       <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center tracking-tight">{title}</h2>
@@ -98,7 +89,6 @@ const StepContainer = ({ title, children }) => (
     </div>
 );
 
-// --- Navigation Buttons ---
 const StepNavigation = ({ onNext, onPrev, nextDisabled = false, prevDisabled = false, nextLabel = "Next", isLastStep = false, onCalculate, calculateDisabled = false }) => (
     <div className={`flex ${onPrev ? 'justify-between' : 'justify-end'} items-center mt-8`}>
       {onPrev && (
@@ -131,7 +121,6 @@ const StepNavigation = ({ onNext, onPrev, nextDisabled = false, prevDisabled = f
     </div>
 );
 
-// --- Step 1: Upload Component ---
 const Step1_Upload = ({ onScanStart, onScanComplete, isLoading, scanStatus, onNext }) => {
   const fileInputRef = useRef(null);
 
@@ -143,7 +132,6 @@ const Step1_Upload = ({ onScanStart, onScanComplete, isLoading, scanStatus, onNe
       onScanStart(); // Notify App component: processing starts
 
       try {
-        // --- Step 1: Upload the file to Cloudinary (Unsigned) ---
         const uploadedFileUrl = await uploadFileToCloudinaryUnsigned(file);
         if (!uploadedFileUrl) { throw new Error('upload_failed'); } // Use custom error message
         console.log("File uploaded via Unsigned Preset, URL:", uploadedFileUrl);
@@ -151,17 +139,6 @@ const Step1_Upload = ({ onScanStart, onScanComplete, isLoading, scanStatus, onNe
         // --- Step 2: Prepare Veryfi API Call ---
         const dataPayload = JSON.stringify({ "file_url": uploadedFileUrl });
 
-        // ============================================================
-        // --- CORS ERROR EXPECTED HERE ---
-        // The following direct API call from the browser WILL FAIL due to CORS policy.
-        // Veryfi API doesn't allow direct calls from browser origins like localhost.
-        // SOLUTION: Implement a backend proxy server. Your frontend should call
-        // your backend, and your backend should securely call the Veryfi API.
-        // The Veryfi keys (Client ID, Username, API Key) belong on that backend server,
-        // NOT here in the frontend code.
-        // The structure is kept here to show where the call *would* go,
-        // but it needs to be replaced with a call to your backend proxy endpoint.
-        // ============================================================
         const response = await axios.post('/api/scan-receipt', {
           file_url: uploadedFileUrl,
         });
@@ -186,7 +163,6 @@ const Step1_Upload = ({ onScanStart, onScanComplete, isLoading, scanStatus, onNe
         } else if (error.message === 'upload_failed') { // Custom error from upload function
           userErrorMessage = 'Failed to upload receipt image.';
         }
-        // Pass error info
         onScanComplete(null, userErrorMessage);
       }
     } else { console.log("No file selected."); }
@@ -213,7 +189,6 @@ const Step1_Upload = ({ onScanStart, onScanComplete, isLoading, scanStatus, onNe
   );
 };
 
-// --- Step 2: Add People ---
 const Step2_People = ({ people, onAddPerson, onRemovePerson, onNext, onPrev, scanComplete }) => {
   const [nameInput, setNameInput] = useState('');
   const handleAddClick = () => { if (nameInput.trim()) { onAddPerson(nameInput.trim()); setNameInput(''); } };
@@ -243,7 +218,6 @@ const Step2_People = ({ people, onAddPerson, onRemovePerson, onNext, onPrev, sca
   );
 };
 
-// --- Step 3: Assign Items ---
 const Step3_Assign = ({ items, people, onAssignClick, onCalculate, onPrev, calculateDisabled }) => {
   return (
       <StepContainer title="Step 3: Assign Items">
@@ -254,7 +228,6 @@ const Step3_Assign = ({ items, people, onAssignClick, onCalculate, onPrev, calcu
   );
 };
 
-// --- ItemCard (Modified Currency) ---
 const ItemCard = ({ item, people, onAssignClick }) => {
   const assignedPeopleNames = useMemo(() => item.sharedBy.map(personId => people.find(p => p.id === personId)?.name.split(' ')[0]).filter(Boolean), [item.sharedBy, people]);
   const displayAssigned = () => {
@@ -272,7 +245,6 @@ const ItemCard = ({ item, people, onAssignClick }) => {
   );
 };
 
-// --- AssignmentModal (Modified Currency) ---
 const AssignmentModal = ({ isOpen, onClose, onSave, item, people }) => {
   const [selectedPeople, setSelectedPeople] = useState(new Set());
   useEffect(() => { if (isOpen && item) { setSelectedPeople(new Set(item.sharedBy)); } else { setSelectedPeople(new Set()); } }, [isOpen, item]);
@@ -293,7 +265,6 @@ const AssignmentModal = ({ isOpen, onClose, onSave, item, people }) => {
 };
 
 
-// --- Step 4: Results ---
 const Step4_Results = ({ results, grandTotal, taxTotal, calculationWarning, onPrev, onStartOver }) => {
   if (!results) return <StepContainer title="Step 4: Results"><p className="text-center text-gray-500 dark:text-gray-400">Results not calculated yet.</p><StepNavigation onPrev={onPrev} /></StepContainer>;
 
@@ -336,7 +307,6 @@ const Step4_Results = ({ results, grandTotal, taxTotal, calculationWarning, onPr
 };
 
 
-// --- Main App Component ---
 function App() {
   const [currentStep, setCurrentStep] = useState(1);
   const [people, setPeople] = useState([]);
@@ -351,19 +321,16 @@ function App() {
   const [editingItemId, setEditingItemId] = useState(null);
   const [results, setResults] = useState(null); // { totals: [], grandTotal: 0, taxTotal: 0, warning: null }
 
-  // --- Navigation ---
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 4));
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
   const goToStep = (step) => setCurrentStep(step);
 
-  // --- Message Handling ---
   const showAppMessage = useCallback((text, type = 'info', duration = 3000) => {
     setMessage({ text, type, isVisible: true });
     if (window.messageTimeout) clearTimeout(window.messageTimeout);
     window.messageTimeout = setTimeout(() => setMessage(prev => ({ ...prev, isVisible: false })), duration);
   }, []);
 
-  // --- State Reset ---
   const resetState = useCallback((showMsg = true) => {
     setPeople([]);
     setItems([]);
@@ -379,7 +346,6 @@ function App() {
     if (showMsg) showAppMessage('App reset.', 'info', 2500);
   }, [showAppMessage]);
 
-  // --- Scan Handling ---
   const handleScanStart = useCallback(() => {
     setIsLoading(true);
     setScanStatus('Processing receipt...');
@@ -421,8 +387,7 @@ function App() {
       setScanStatus('Scan complete! Proceed to assign items.');
       setScanErrorOccurred(false);
       showAppMessage('Receipt processed successfully!', 'success');
-      // Optionally auto-navigate if user is still on step 1? Or let them click next.
-      // if (currentStep === 1) nextStep(); // Example auto-navigation
+
     } else {
       setScanStatus('Scan finished, but no usable data found.');
       setScanErrorOccurred(true);
@@ -432,19 +397,15 @@ function App() {
     }
   }, [showAppMessage]); // Removed currentStep, nextStep dependency for manual navigation
 
-  // --- People Management ---
   const handleAddPerson = useCallback((name) => { if (people.some(p => p.name.toLowerCase() === name.toLowerCase())) { showAppMessage(`${name} is already on the list.`, 'warning', 2000); return; } setPeople(prev => [...prev, { id: generateId(), name }]); showAppMessage(`${name} added!`, 'info', 2000); setResults(null); }, [people, showAppMessage]);
   const handleRemovePerson = useCallback((idToRemove) => { const personToRemove = people.find(p => p.id === idToRemove); setPeople(prev => prev.filter(p => p.id !== idToRemove)); setItems(prevItems => prevItems.map(item => ({ ...item, sharedBy: item.sharedBy.filter(personId => personId !== idToRemove) }))); if (personToRemove) showAppMessage(`${personToRemove.name} removed.`, 'info', 2000); setResults(null); }, [people, showAppMessage]);
 
-  // --- Item Assignment ---
   const handleOpenModal = useCallback((itemId) => { setEditingItemId(itemId); setIsModalOpen(true); }, []);
   const handleCloseModal = useCallback(() => { setIsModalOpen(false); setEditingItemId(null); }, []);
   const handleSaveAssignment = useCallback((itemId, assignedPersonIds) => { setItems(prevItems => prevItems.map(item => item.id === itemId ? { ...item, sharedBy: assignedPersonIds } : item)); const item = items.find(i => i.id === itemId); if(item) showAppMessage(`${item.name} assignment updated.`, 'info', 1500); handleCloseModal(); setResults(null); }, [handleCloseModal, showAppMessage, items]);
   const itemToEdit = useMemo(() => items.find(item => item.id === editingItemId), [items, editingItemId]);
 
-  // --- Calculation ---
   const handleCalculateSplit = useCallback(() => {
-    // (Calculation logic remains the same as previous version)
     if (people.length === 0) { showAppMessage('Add at least one person.', 'warning', 3000); return; }
     if (items.length === 0) { showAppMessage('No items found.', 'warning', 3000); return; }
     const personTotals = people.map(p => ({ ...p, total: 0 }));
@@ -458,7 +419,6 @@ function App() {
     setCurrentStep(4); // Navigate to results step
   }, [people, items, receiptTax, showAppMessage]);
 
-  // --- Render Current Step ---
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -466,11 +426,9 @@ function App() {
       case 2:
         return <Step2_People people={people} onAddPerson={handleAddPerson} onRemovePerson={handleRemovePerson} onNext={nextStep} onPrev={prevStep} scanComplete={scanComplete && !scanErrorOccurred} />;
       case 3:
-        // Only allow proceeding to assign if scan is complete and didn't error out
         if (!scanComplete || scanErrorOccurred) {
-          // Optionally show a message or redirect back
-          goToStep(scanErrorOccurred ? 1 : 2); // Go back to upload if error, or people if still scanning
-          return null; // Or a placeholder indicating scan needed/failed
+          goToStep(scanErrorOccurred ? 1 : 2);
+          return null;
         }
         return <Step3_Assign items={items} people={people} onAssignClick={handleOpenModal} onCalculate={handleCalculateSplit} onPrev={prevStep} calculateDisabled={isLoading} />;
       case 4:
@@ -486,7 +444,6 @@ function App() {
         <MessageBox message={message.text} isVisible={message.isVisible} type={message.type} />
         {renderStep()}
         <AssignmentModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveAssignment} item={itemToEdit} people={people} />
-        {/* Simple CSS for custom checkbox appearance if needed */}
         <style jsx global>{`
         input[type="checkbox"].custom-checkbox { appearance: none; background-color: transparent; margin: 0; font: inherit; color: currentColor; width: 1.15em; height: 1.15em; border: 0.1em solid #9ca3af; border-radius: 0.25rem; transform: translateY(-0.075em); display: inline-grid; place-content: center; cursor: pointer; transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out; }
         input[type="checkbox"].custom-checkbox::before { content: ""; width: 0.65em; height: 0.65em; transform: scale(0); transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em #4f46e5; transform-origin: bottom left; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
