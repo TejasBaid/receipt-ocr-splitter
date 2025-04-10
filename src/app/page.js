@@ -440,7 +440,7 @@ function App() {
 
   return (
       <Layout>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center tracking-tight">Split Your Bill</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center tracking-tight">SPLIT YOUR BILL</h1>
         <MessageBox message={message.text} isVisible={message.isVisible} type={message.type} />
         {renderStep()}
         <AssignmentModal isOpen={isModalOpen} onClose={handleCloseModal} onSave={handleSaveAssignment} item={itemToEdit} people={people} />
